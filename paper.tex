@@ -1,0 +1,224 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+% if you need to pass options to natbib, use, e.g.:
+% \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading nips_2017
+%
+% to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{nips_2017}
+
+\usepackage{nips_2017}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+% \usepackage[final]{nips_2017}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+
+% Could this be a better title?
+\title{A generic and fast C++ optimization framework}
+
+% The \author macro works with any number of authors. There are two
+% commands used to separate the names and addresses of multiple
+% authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to
+% break the lines. Using \AND forces a line break at that point. So,
+% if LaTeX puts 3 of 4 authors names on the first line, and the last
+% on the second line, try using \AND instead of \And before the third
+% author name.
+
+\author{
+  Shikhar Bhardwaj \\
+  \AND
+  Yannis Mentekidis \\
+  \AND
+  Marcus Edel \\
+  \AND
+  Ryan R. Curtin \\
+  Symantec Corporation \\
+}
+
+\begin{document}
+% \nipsfinalcopy is no longer used
+
+\maketitle
+
+\begin{abstract}
+The development of the {\bf mlpack} C++ machine learning library
+(\url{http://www.mlpack.org/}) has required the design and implementation of a
+flexible, robust optimization system that is able to solve the types of
+arbitrary optimization problems that may arise all throughout machine learning
+problems.  You care because:
+
+\begin{itemize}
+  \item It's easy to implement new optimizers.
+  \item It's easy to implement new functions to be optimized.
+  \item This system is more comprehensive than other techniques that may focus
+only on neural networks or single problems.
+  \item This system is also more specific and offers more room for optimization
+than super general systems like scipy.optimize().
+\end{itemize}
+
+This abstract will need to be rewritten.
+\end{abstract}
+
+\section{Introduction}
+
+In recent times, machine learning conferences have focused more and more on
+optimization techniques.  For instance, this year at ICML (ICML 2017), every
+single session had at least one track devoted solely to optimization
+techniques.
+<TODO: add some more filler here.  Show that optimization is an important part
+of machine learning, in whatever ways.>
+
+\begin{itemize}
+  \item This sequence of events (or situation) motivates the development of a
+generic, flexible, and fast optimization framework.
+  \item We have implemented exactly this in {\bf mlpack}, and it's good.
+\end{itemize}
+
+{\bf <TODO: elaborate on above, add a few more sentences.>}
+
+{\bf <TODO: mention related work, or really that we haven't found other
+libraries that have a comprehensive infrastructure like the one we have built,
+and that what we have built is more flexible and generic}
+
+\section{mlpack: a scalable C++ machine learning library}
+
+\begin{itemize}
+  \item Some quick background on what mlpack is and what its goals are.
+Probably the list of four goals is good here (though maybe not in itemized
+format).
+  \item Discuss why we've chosen C++, and how policy-based design gives us some
+really nice flexibility.  (Maybe there is not fully space for that.)
+\end{itemize}
+
+\section{Requirements for optimizers and functions}
+
+In general, we want to be able to consider any solver of the problem
+
+\begin{equation}
+\operatorname{argmin}_{x} f(x)
+\end{equation}
+
+\noindent for any function $f(x)$ that takes some vector input $x$.  However, it
+is impossible to implement something both so generic and fast---for instance,
+gradient-based approaches converge far more quickly than gradient-free
+approaches (in general), so we must design an abstraction that is able to
+simultaneously generalize to many problem types, as well as able to take
+advantage of accelerations and optimizations.
+
+Let us split the class of functions to be optimized into some subclasses:
+
+\begin{itemize}
+  \item {\bf arbitrary}: no assumptions can be made on $f(x)$
+  \item {\bf differentiable}: $f(x)$ has a computable gradient $f'(x)$
+  \item {\bf separable}: $f(x)$ is a sum of individual components: $f(x) =
+\sum_{i} f_i(x)$
+  \item {\bf categorical}: $x$ contains elements that can only take discrete
+values
+  \item {\bf numeric}: all elements of $x$ take values in $\mathcal{R}$
+  \item {\bf sparse}: the gradient $f'(x)$ or $f_i(x)$ (for a separable
+function) is sparse
+  \item {\bf partially differentiable}: the gradient $f'_j(x)$ is computable for
+individual elements $x_j$ of $x$
+  \item {\bf bounded}: $x$ is limited in the values that it can take
+\end{itemize}
+
+Needless to say, it is impossible to create a system where every optimizer can
+work with every possible type of function: a gradient-based optimizer cannot
+reasonably be expected to work with an arbitrary function $f(x)$ where the
+gradient is not computable or available.
+
+Instead, the best we can hope to achieve is to maximize the flexibility
+available, so that a user can easily implement a function $f(x)$ and have it
+work with as many optimizers as possible.  For this, C++ policy-based design
+aids us greatly: when implementing a function to be optimized, a user can
+implement only a few methods and we can use C++ template metaprogramming to
+check that the given functions match the requirements of the optimizer that is
+being used.  When implementing an optimizer, a user can assume that the given
+function to be optimized meets the required assumptions of the optimizers, and
+encode those requirements.  Since we are using templates and C++, the resulting
+code generated by the compiler can be identical to what a developer would write
+if they were writing an optimizer specifically for the function $f(x)$ at
+hand---this can provide significant efficiency gains.
+
+{\bf <TODO: maybe we should add a table with optimizer types that work with
+certain assumptions.  Maybe this can be a table, maybe a diagram, but some kind
+of visual aid to split the space of objective function types would be nice.>}
+
+\section{{\tt FunctionType} API}
+
+In order to facilitate consistent implementations, we have defined a {\tt
+FunctionType} API that describes all the functions that an objective function
+may (or must) implement, depending on the subclass of objective function.
+
+{\bf <TODO: we can add a list of each function and what it does.  A basic list
+is below.  We can elaborate on this significantly.>}
+
+\begin{itemize}
+  \item {\tt Evaluate()}
+  \item {\tt Gradient()}
+  \item {\tt PartialGradient()} 
+  \item ...
+  \item constraints?
+  \item discrete variable support?
+  \item batch support
+\end{itemize}
+
+A user may implement as many (or as few) of these functions as they would like,
+and this will allow them to use a larger set of optimizers.
+
+{\bf <TODO: add very simple example function>}
+
+\section{Static checking of functions}
+
+{\bf <TODO: probably a better section title>}
+
+Unfortunately, template metaprogramming can result in some very lengthy error
+messages.  Therefore, we must be careful to ensure that a user is able to easily
+debug a problem when they implement an objective function or gradient.  To
+provide good error message output, we can use C++'s template metaprogramming
+support to determine what methods a type has available.  Similarly, we can also
+use static compile-time constants to denote the methods that are require by a
+specific optimizer.  This is implemented via SFINAE \cite{sfinae}.  A {\tt
+static\_assert()} is raised when a given objective function does not have the
+required methods for a given optimizer.  {\bf <TODO: implement this, so we are
+not lying.  But it should be easy enough, maybe an hour of work max.>}
+
+For instance, when attempting to use the L-BFGS optimizer without having a
+{\tt Gradient()} function implemented, the user will receive the following error
+message:
+
+{\bf <TODO: put error message here.  If we are short on space, let's cut this
+example and make this section shorter.>}
+
+\section{Supported optimizers and functions in mlpack}
+
+Thanks to the easy abstraction, we have been able to provide support for a large
+set of diverse optimizers and objective functions.  Below is a list of what is
+currently available.
+
+\begin{itemize}
+  \item {\bf <TODO: add all optimizers>}
+  \item {\bf <TODO: add all things that we can optimize>}
+\end{itemize}
+
+\section{Conclusion}
+
+We have identified that the support for generic and robust optimization is not
+currently available in most machine learning toolkits, and acted upon this
+observation to provide an easy framework for both implementing new optimizers
+and new objective functions to be optimized inside of the {\bf mlpack} machine
+learning library.  This supports a 
+
+\end{document}

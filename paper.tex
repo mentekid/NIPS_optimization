@@ -85,24 +85,82 @@ This abstract will need to be rewritten.
 
 \section{Introduction}
 
-In recent times, machine learning conferences have focused more and more on
-optimization techniques.  For instance, this year at ICML (ICML 2017), every
-single session had at least one track devoted solely to optimization
-techniques.
-<TODO: add some more filler here.  Show that optimization is an important part
-of machine learning, in whatever ways.>
+Machine learning is a field that is inextricably intertwined with the field of
+optimization.  Countless machine learning techniques depend on the optimization
+of a given objective function; for instance, classifiers such as logistic
+regression \cite{cox1958regression}, metric learning methods like NCA
+\cite{goldberger2005neighbourhood}, manifold learning algorithms like MVU
+\cite{weinberger2006introduction}, and the extremely popular field of deep
+learning \cite{schmidhuber2015deep}.  Thanks to the attention focused on these
+problems, it is increasingly important in the field to have fast, practical
+optimizers.  This can explain the current focus on optimization: this year at
+ICML (2017), every single session had at least one track devoted solely to
+optimization techniques.
 
-\begin{itemize}
-  \item This sequence of events (or situation) motivates the development of a
-generic, flexible, and fast optimization framework.
-  \item We have implemented exactly this in {\bf mlpack}, and it's good.
-\end{itemize}
+Therefore, the need is real to provide a robust, flexible framework in which
+new optimizers can be easily developed.  Similarly, the need is also real for a
+flexible framework that allows new objective functions to be easily implemented
+and optimized with a variety of possible optimizers.
 
-{\bf <TODO: elaborate on above, add a few more sentences.>}
+However, the current landscape of optimization frameworks for machine learning
+is not particularly comprehensive.  A variety of tools such as
+Caffe \cite{jia2014caffe},
+% mxnet ??
+TensorFlow \cite{abadi2016tensorflow},
+and
+Keras \cite{chollet2015}
+have optimization frameworks, but they are limited to SGD-type optimizers and
+only are able to optimize deep neural networks or related structures.  Thus
+expressing arbitrary machine learning objective functions can be difficult or in
+some cases not possible.  Other libraries, like
+% Shogun \cite{shogun}
+%and
+scikit-learn \cite{pedregosa2011scikit},
+do have optimizers implementation, but generally not in a coherent framework and
+often the implementations may be specific to an individual machine learning
+algorithm.  At a higher level, many programming languages may have generic
+optimizers, like SciPy \cite{jones2014scipy} and MATLAB, but typically these
+optimizers are not suitable for large-scale machine learning tasks where, e.g.,
+calculating the full gradient of all of the data may not be feasible.
 
-{\bf <TODO: mention related work, or really that we haven't found other
-libraries that have a comprehensive infrastructure like the one we have built,
-and that what we have built is more flexible and generic}
+Given this situation, we have developed a flexible optimization infrastructure
+in the {\bf mlpack} C++ machine learning library \cite{mlpack2013}.  This
+infrastructure makes it easy to combine nearly any type of optimizer with nearly
+any type of objective function, and has allowed us to minimize the effort
+necessary to both implement new optimizers and to implement new machine learning
+algorithms that depend on optimization.  Since the framework is implemented in
+C++ and uses template metaprogramming, we are able to preserve a clean syntax
+while simultaneously allowing compile-time optimizations that can result in a
+generic optimizer that is equivalently fast to an optimizer written specifically
+for one objective function.
+
+In this short paper, we describe mlpack's optimization infrastructure in detail.
+First, we describe the types of optimization problems we would like to solve,
+which then allows us to build a generic and intuitive API for objective
+functions to implement and optimizers to depend upon.  We show a very simple
+example objective function and optimizer, and a system that we have built to
+detect when a user passes an objective function that cannot be optimized by a
+certain optimizer.  Lastly, we show the optimizers we have implemented in this
+framework, and some example usage of mlpack's optimizers.
+
+%In recent times, machine learning conferences have focused more and more on
+%optimization techniques.  For instance, this year at ICML (ICML 2017), every
+%single session had at least one track devoted solely to optimization
+%techniques.
+%<TODO: add some more filler here.  Show that optimization is an important part
+%of machine learning, in whatever ways.>
+
+%\begin{itemize}
+%  \item This sequence of events (or situation) motivates the development of a
+%generic, flexible, and fast optimization framework.
+%  \item We have implemented exactly this in {\bf mlpack}, and it's good.
+%\end{itemize}
+
+%{\bf <TODO: elaborate on above, add a few more sentences.>}
+
+%{\bf <TODO: mention related work, or really that we haven't found other
+%libraries that have a comprehensive infrastructure like the one we have built,
+%and that what we have built is more flexible and generic}
 
 % Just to get a feeling of the look; Also, we could also just use \OK instead of \CURCLE or \LEFTcircle
 \begin{table}
@@ -258,5 +316,8 @@ currently available in most machine learning toolkits, and acted upon this
 observation to provide an easy framework for both implementing new optimizers
 and new objective functions to be optimized inside of the {\bf mlpack} machine
 learning library.  This supports a 
+
+\bibliographystyle{plain}
+\bibliography{paper}
 
 \end{document}

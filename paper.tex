@@ -302,12 +302,29 @@ currently available.
 
 % I guess to save some space we should group them.
 \begin{itemize}
-  \item {\bf SGD variants:} Vanilla SGD, SCD, SGDR, SMORMS3, AdaGrad, AdaDelta, RMSProp, Adam, AdaMax
-  \item {\bf Quasi-Newton variants:} LBFGS, IQN, AugLagrangian
-  \item {\bf Genetic variants:} CNE, CMA-ES
-  \item {\bf Simulated Annealing}: Vanilla SA
-  \item {\bf <TODO: add all things that we can optimize>}
+  \item {\bf SGD variants:} Stochastic Gradient Descent (SGD), Stochastic
+      Coordinate Descent (SCD), Parallel Stochastic Gradient Descent (Hogwild!),
+      Stochastic Gradient Descent with Restarts (SGDR), SMORMS3, AdaGrad,
+      AdaDelta, RMSProp, Adam, AdaMax
+
+  \item {\bf Quasi-Newton variants:} Limited-memory BFGS (L-BFGS), incremental
+        Quasi-Newton method (IQN), Augmented Lagrangian Method
+
+  \item {\bf Genetic variants:} Conventional Neuro-evolution (CNE), Covariance
+        Matrix Adaptation Evolution Strategy (CMA-ES)
+
+  \item Simulated Annealing
+
+  \item Frank-Wolfe algorithm
+
+  \item {\bf Objective functions:} Neural Networks, Logistic regression,
+      Matrix completion, Neighborhood Components Analysis, Regularized SVD,
+      Reinforcement learning, Softmax regression, Sparse autoencoders,
+      Sparse SVM
 \end{itemize}
+
+In addition, many methods are currently in development and will be released in
+the future.
 
 \section{Conclusion}
 

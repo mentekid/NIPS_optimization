@@ -277,6 +277,7 @@ and this will allow them to use a larger set of optimizers.
 For instance, the code below defines a simple sparse function, where each
 dimension has a parabola with a distinct minimum.
 
+\lstset{language=C++}
 \begin{lstlisting}
 class SparseFunction
 {
@@ -300,7 +301,17 @@ class SparseFunction
 
 \end{lstlisting}
 
-Another important component of the optimization framework design is flexibility. To this end, we use a C++ programming paradigm known as policy-based design \cite{Alexandrescu2001}. In short, this means that the behavior is easily controllable by the user, simply by specifying template parameters. For example, the SGD class, which is used as basis for other stochastic gradient descent methods, accepts a template parameter UpdateType. Thus, if the user wants to update the learning rate update strategy that mlpack does not have support for, they merely need to implement a optimizer class, and then they can use the type SGD<MyCustomLearningRate>. Additionally, because templates are being used, there is no additional overhead, as there would be when providing this type of support through inheritance or in other languages such as Python or C
+Another important component of the optimization framework design is flexibility.
+To this end, we use a C++ programming paradigm known as policy-based design
+\cite{Alexandrescu2001}. In short, this means that the behavior is easily
+controllable by the user, simply by specifying template parameters. For example,
+the SGD class, which is used as basis for other stochastic gradient descent
+methods, accepts a template parameter UpdateType. Thus, if the user wants to
+update the learning rate update strategy that mlpack does not have support for,
+they merely need to implement a optimizer class, and then they can use the type
+SGD<MyCustomLearningRate>. Additionally, because templates are being used, there
+is no additional overhead, as there would be when providing this type of support
+through inheritance or in other languages such as Python or C.
 
 \section{Static checking of functions}
 

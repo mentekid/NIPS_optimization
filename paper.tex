@@ -7,7 +7,7 @@
 \usepackage{wasysym}
 \usepackage{tabularx}
 \usepackage{threeparttable}
-\usepackage{listings}
+\usepackage{minted}
 
 % if you need to pass options to natbib, use, e.g.:
 % \PassOptionsToPackage{numbers, compress}{natbib}
@@ -185,15 +185,53 @@ framework, and some example usage of mlpack's optimizers.
 \end{tablenotes}
 \end{table}
 
-\section{mlpack: a scalable C++ machine learning library}
+\section{The mlpack machine learning library}
 
-\begin{itemize}
-  \item Some quick background on what mlpack is and what its goals are.
-Probably the list of four goals is good here (though maybe not in itemized
-format).
-  \item Discuss why we've chosen C++, and how policy-based design gives us some
-really nice flexibility.  (Maybe there is not fully space for that.)
-\end{itemize}
+mlpack is a C++ machine learning library with an emphasis on speed, flexibility,
+and ease of use \cite{mlpack2013}; it has been continuously developed since
+2007.  mlpack uses the Armadillo library \cite{sanderson2016armadillo} for
+linear algebra and matrix primitives.  Both mlpack and Armadillo exploit C++
+language features such as policy-based design and template metaprogramming to
+provide compile-time optimizations that result in fast code \cite{pasc2017},
+while retaining a simple and easy-to-use interface \cite{icopust2017}.
+
+Many of the speedups in mlpack depend on the technique of {\it policy-based
+design} \cite{Alexandrescu2001}.  With this design paradigm, mlpack
+provides a number of classes with modular functionality.  As a simple example,
+mlpack's mean shift clustering implementation (as of version 2.2.5) takes three
+template parameters:
+
+\begin{minted}{c++}
+  template<bool UseKernel, typename KernelType, typename MatType>
+  class MeanShift;
+\end{minted}
+
+Thus a user wishing to perform kernelized mean shift clustering with the
+Gaussian kernel might simply use the class
+
+\begin{minted}{c++}
+  MeanShift<true, GaussianKernel, arma::mat>
+\end{minted}
+
+\noindent where {\tt arma::mat} is Armadillo's dense matrix type and {\tt
+GaussianKernel} is a class that provides one simple {\tt Evaluate()} function
+that returns the kernel value between its two arguments.  Since the {\tt
+KernelType} argument is a template argument, any class can be used---it does not
+need to be functionality supplied with mlpack.  Therefore, a user can simply
+implement their own {\tt KernelType} class with the single {\tt Evaluate()}
+function and use that as a template argument to the {\tt MeanShift} class, and
+the compiler will generate a specialized implementation using the custom kernel.
+Similar support could be accomplished by, e.g., function pointers (and this is
+often done in other languages); however, templates allow us to avoid the runtime
+cost of dereferencing the function pointer by generating code that directly
+calls the correct function, which can be a non-negligible cost especially when
+the function is called many times.
+
+mlpack uses policy-based design throughout the library, so that any
+functionality can be easily extended or modified by the user without needing to
+dig into the internals of the code.  Our optimization framework is built around
+this paradigm, allowing for fast prototyping of either new optimizers or new
+objective functions.
 
 \section{Requirements for optimizers and functions}
 
@@ -277,8 +315,7 @@ and this will allow them to use a larger set of optimizers.
 For instance, the code below defines a simple sparse function, where each
 dimension has a parabola with a distinct minimum.
 
-\lstset{language=C++}
-\begin{lstlisting}
+\begin{minted}{c++}
 class SparseFunction
 {
   SparseFunction()
@@ -298,8 +335,7 @@ class SparseFunction
     g[i] = 2 * p[i] + bi[i];
   }
 }
-
-\end{lstlisting}
+\end{minted}
 
 Another important component of the optimization framework design is flexibility.
 To this end, we use a C++ programming paradigm known as policy-based design

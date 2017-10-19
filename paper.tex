@@ -295,8 +295,9 @@ the compiler will generate a specialized implementation using the custom kernel.
 Similar support could be accomplished by, e.g., function pointers (and this is
 often done in other languages); however, templates allow us to avoid the runtime
 cost of dereferencing the function pointer by generating code that directly
-calls the correct function, which can be a non-negligible cost especially when
-the function is called many times.
+calls the correct function. This cost can be non-negligible, especially in
+situations where the function is called many times, such as the {\tt Evaluate()}
+function of an optimization problem.
 
 mlpack uses policy-based design throughout the library, so that any
 functionality can be easily extended or modified by the user without needing to
@@ -371,6 +372,37 @@ should implement the relevant parts of.
 In order to facilitate consistent implementations, we have defined a {\tt
 FunctionType} API that describes all the functions that an objective function
 may (or must) implement, depending on the subclass of objective function.
+
+At the time of writing, we offer a few implementations of this API, each
+designed to cover a special case.
+
+\begin{itemize}
+  \item{\tt FunctionType}: Requires the implementation of {\tt Evaluate()} and
+  {\tt Gradient()}. This is a generic function that is used by the
+  {\tt GradientDescent} optimizer.
+  \item{\tt DecomposableFunctionType}: In addition to {\tt FunctionType}'s
+  requirements, requires the implementation of {NumFunctions()}, which returns
+  the number of parts the optimization problem can be decomposed into. The other
+  two functions ({\tt Gradient(), Evaluate()}) accept an index as argument and
+  only evaluate one of the decomposable parts. This is used by our {\tt AdaGrad}
+  implementations, some {\tt SGD} implementations, {\tt RMSProp} and
+  {\tt SMORMS3}.
+  \item{\tt SparseFunctionType}: Similar to {\tt DecomposableFunctionType},
+  however this function type returns a sparse gradient, which makes it ideal for
+  sparse, parallelizable optimization problems. This function type is used by
+  {\bf mlpack}'s parallel implementation of SGD, {\tt ParallelSGD}.
+  \item{\tt LagrangianFunctionType}: This function type fits constrained
+  optimization problems. It requires the implementation of {\tt NumConstraints},
+  {\tt EvaluateConstraint()} and {\tt GradientConstraint}, which are required by
+  optimizers like {\tt AugLagrangian} and {\tt LRSDP}.
+\end{itemize}
+
+In addition to these function types, certain optimizers require specific
+functionality to achieve their goal. The {\tt FunctionType} API offers users the
+flexibility to define a custom function signature. As an example, {\bf mlpack}'s
+implementation of L-BFGS requires a function that exposes a
+{\tt GetInitialPoint} function.
+
 
 {\bf <TODO: we can add a list of each function and what it does.  A basic list
 is below.  We can elaborate on this significantly.>}
@@ -541,7 +573,7 @@ learning library.
 
 The framework provided by {\bf mlpack} supports a wide array of special cases,
 and offers specialized algorithms that outperform their classic generic
-alternatives.
+ (alternatives.
 
 \bibliographystyle{plain}
 \bibliography{paper}

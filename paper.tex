@@ -30,8 +30,17 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 
-\newcommand*\rot{\rotatebox{90}}
+\usepackage{adjustbox}
+\usepackage{array}
+
 \newcommand*\OK{\ding{51}}
+
+\newcolumntype{R}[2]{%
+  >{\adjustbox{angle=#1,lap=\width-(#2)}\bgroup}%
+  l%
+  <{\egroup}%
+}
+\newcommand*\rot{\multicolumn{1}{R{60}{2em}}}
 
 % Could this be a better title?
 \title{A generic and fast C++ optimization framework}
@@ -58,6 +67,7 @@
   \AND
   Ryan R. Curtin \\
   Symantec Corporation \\
+  \texttt{ryan@ratml.org} \\
 }
 
 \begin{document}
@@ -122,7 +132,9 @@ often the implementations may be specific to an individual machine learning
 algorithm.  At a higher level, many programming languages may have generic
 optimizers, like SciPy \cite{jones2014scipy} and MATLAB, but typically these
 optimizers are not suitable for large-scale machine learning tasks where, e.g.,
-calculating the full gradient of all of the data may not be feasible.
+calculating the full gradient of all of the data may not be feasible.  Table
+\ref{tab:features} provides a rough overview of the capabilities of many common
+machine learning libraries and languages.
 
 Given this situation, we have developed a flexible optimization infrastructure
 in the {\bf mlpack} C++ machine learning library \cite{mlpack2013}.  This
@@ -166,25 +178,82 @@ framework, and some example usage of mlpack's optimizers.
 % Just to get a feeling of the look; Also, we could also just use \OK instead of \CURCLE or \LEFTcircle
 \begin{table}
 \centering
-    \begin{tabular}{@{} cl*{6}c @{}}
-        & & \multicolumn{6}{c}{} \\[2ex]
+    \begin{tabular}{@{} cl*{7}c @{}}
+%  \begin{tabular}{ccccccc}
+        & & \multicolumn{7}{c}{} \\[2ex]
+            % If there is any coherent framework at all, this is true.
         & & \rot{has framework}
-          & \rot{\shortstack[l]{problem-independent\\constraints}}
+            % If there is any support for constrained optimization, this is
+            % true.
+          & \rot{constraints}
+            % If the optimization framework can do mini-batch, this is true.
           & \rot{batches}
-          & \rot{reusability}
-          & \rot{x}
-          & \rot{y} \\
-        \cmidrule{2-8}
-        & mlpack             & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE  \\
-        & vowpal wabbit      & - & - & \LEFTcircle  & \CIRCLE & - & - \\
-        & TensorFlow         & - & -  & \CIRCLE  & \LEFTcircle & - & -  \\
-        & scikit-learn       & - & -  & \CIRCLE  & \LEFTcircle & - & - \\
-        & scipy              & - & \LEFTcircle  & -  & \LEFTcircle & - & - \\
-        \cmidrule[1pt]{2-8}
+            % If I can implement any arbitrary function to be optimized, this is
+            % true.
+          & \rot{arbitrary functions}
+            % If I can implement any new optimization technique to use, this is
+            % true.
+          & \rot{arbitrary optimizers}
+            % If the framework could take advantage of when the gradient is
+            % sparse, this is true.
+          & \rot{sparse gradients}
+            % If the framework can handle categorical/discrete variables for
+            % optimization, this is true.
+          & \rot{categorical} \\
+        \cmidrule{2-9}
+  \hline
+        % It might be reasonable to say mlpack categorical support is only
+        % partial, but I am not sure exactly where we draw the line.
+        & mlpack             & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE \\
+        % The Shogun toolbox has a fairly nice framework, but it doesn't support
+        % sparse gradients or categorical features.  It also does not appear to
+        % support constraints.
+        & shogun             & \CIRCLE & - & \CIRCLE & \CIRCLE & \CIRCLE & - & -
+\\
+        % VW doesn't appear to have any framework whatsoever and the code is
+        % awful, but it does support batches and categorical features.
+        & vowpal wabbit      & - & - & \CIRCLE  & - & - & - &
+\CIRCLE \\
+        % TensorFlow has a few optimizers, but they are all SGD-related.  You
+        % can write most objectives easily (but some very hard), and categorical
+        % support might be possible but would not be easy.
+        & TensorFlow         & \CIRCLE & -  & \CIRCLE  & \LEFTcircle & - &
+\LEFTcircle & -  \\
+        % Caffe has a nice framework, but it's only for SGD-related optimizers.
+        % I think I could write a new one, but it is not the easiest thing in
+        % the world.
+        & caffe             & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
+& - & - \\
+        % Keras is restricted to neural networks and SGD-like optimizers.  I
+        % don't know that it is possible to easily write a new optimizer.
+        & keras             & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
+& - & - \\
+        % sklearn has a few optimizer frameworks, but they are all in different
+        % places and have somewhat different support.
+        & scikit-learn       & \LEFTcircle & - & \LEFTcircle  & \LEFTcircle & -
+& - & - \\
+        % scipy has some nice optimizer framework but it does not support
+        % batches or some of the more complex functionality.  And you can't
+        % write your own.
+        & scipy              & \CIRCLE & \CIRCLE  & -  & \CIRCLE & - & - & - \\
+        % MATLAB is very similar to scipy.
+        & MATLAB             & \CIRCLE & \CIRCLE & - & \CIRCLE & - & - & - \\
+        \cmidrule[1pt]{2-9}
     \end{tabular}
-    \begin{tablenotes}\footnotesize
-\item[*] Library feature comparison: \CIRCLE=\text{provides feature}, \LEFTcircle=\text{partially provides feature}, -=\text{does not provide feature}
-\end{tablenotes}
+%   \begin{tablenotes}\footnotesize
+\caption{
+Library feature comparison: \CIRCLE = provides feature,
+\LEFTcircle = partially provides feature, - = does not provide feature.
+{\it has framework} indicates that the library has some kind of generic
+optimization framework; {\it constraints} and {\it batches} indicate support for
+batches; {\it arbitrary functions} means arbitrary objective functions are
+easily implemented; {\it arbitrary optimizers} means arbitrary optimizers are
+easily implemented; {\it sparse gradient} indicates whether the framework can
+natively take advantage of sparse gradients; and {\it categorical} refers to
+whether support for categorical features exists.
+}
+\label{tab:features}
+\vspace*{-1.5em}
 \end{table}
 
 \section{The mlpack machine learning library}

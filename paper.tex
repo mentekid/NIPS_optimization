@@ -111,7 +111,7 @@ TensorFlow \cite{abadi2016tensorflow},
 and
 Keras \cite{chollet2015}
 have optimization frameworks, but they are limited to SGD-type optimizers and
-only are able to optimize deep neural networks or related structures.  Thus
+are only able to optimize deep neural networks or related structures.  Thus
 expressing arbitrary machine learning objective functions can be difficult or in
 some cases not possible.  Other libraries, like
 % Shogun \cite{shogun}
@@ -460,7 +460,11 @@ We have identified that the support for generic and robust optimization is not
 currently available in most machine learning toolkits, and acted upon this
 observation to provide an easy framework for both implementing new optimizers
 and new objective functions to be optimized inside of the {\bf mlpack} machine
-learning library.  This supports a 
+learning library.
+
+The framework provided by {\bf mlpack} supports a wide array of special cases,
+and offers specialized algorithms that outperform their classic generic
+alternatives.
 
 \bibliographystyle{plain}
 \bibliography{paper}

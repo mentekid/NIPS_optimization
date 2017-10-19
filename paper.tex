@@ -299,11 +299,13 @@ may (or must) implement, depending on the subclass of objective function.
 is below.  We can elaborate on this significantly.>}
 
 \begin{itemize}
-  \item {\tt Evaluate()} Evaluate a function.
-  \item {\tt Gradient()}: Evaluate the gradient of a function.
+  \item {\tt Evaluate()}: Evaluate a function with the given function parameter.
 
-  \item {\tt PartialGradient()} Evaluate the partial (sparse) gradient of a
-      function.
+  \item {\tt Gradient()}: Evaluate the gradient of a function with the given
+      function parameter and return the gradient.
+
+  \item {\tt PartialGradient()}: Evaluate the partial (sparse) gradient of a
+      function with the given parameter and return the partial gradient.
 
   \item ...
   \item constraints?
@@ -317,8 +319,11 @@ and this will allow them to use a larger set of optimizers.
 {\bf <TODO: add very simple example function>}
 
 
-For instance, the code below defines a simple sparse function, where each
-dimension has a parabola with a distinct minimum.
+This section details the usage of mlpack's optimization framework. In this
+example, we would like to minimize a simple sparse function, where each
+dimension has a parabola with a distinct minimum. In this example, we will show
+how we can use mlpack’s framework for this task, and obtain the objective of the
+sparse function shown below.
 
 \begin{minted}{c++}
 class SparseFunction
@@ -341,6 +346,47 @@ class SparseFunction
   }
 }
 \end{minted}
+
+First, we would like to define {\tt Optimize()} which takes the function we like
+to optimize and the function parameters as an Armadillo dense matrix type as
+input.
+
+\begin{minted}{c++}
+template<typename FunctionType, typename ParameterType>
+double Optimize(DecomposableFunctionType& function, ParameterType& parameter);
+\end{minted}
+
+Now, we can use {\tt Gradient()} to write a simple stochastic gradient descent
+method with a static learning rate to optimize the function parameter.
+
+\begin{minted}{c++}
+for (size_t i = 0; i < 300; ++i)
+{
+  const size_t functionIndex = i % 4;
+  function.Gradient(parameter, functionIndex, gradient);
+  parameter -= 0.1 * gradient;
+}
+\end{minted}
+
+Lastly, we would like to calculate the final objective. This can be done by
+iterating over the parameter space using {\tt Evaluate()}.
+
+\begin{minted}{c++}
+double objective = 0;
+for (size_t i = 0; i < 4; ++i)
+  objective += function.Evaluate(parameter, i);
+\end{minted}
+
+Using this code, we can compile the code, and when we run it we receive the
+following output:
+
+xxxx
+
+This simple example, of course, does not discuss all the intricacies like a more
+complex learning rate update routine, but instead presents how the optimization
+framework could be used in a simple data science context. Adapting the example
+to a real-life application would be more straightforward.
+
 
 Another important component of the optimization framework design is flexibility.
 To this end, we use a C++ programming paradigm known as policy-based design
@@ -397,7 +443,7 @@ currently available.
 
   \item {\bf Annealing variants:} Simulated Annealing
 
-  \item {\bf Else:} Conditional Gradient Descent (Frank-Wolfe algorithm)
+  \item {\bf Other:} Conditional Gradient Descent (Frank-Wolfe algorithm)
 
   \item {\bf Objective functions:} Neural Networks, Logistic regression,
       Matrix completion, Neighborhood Components Analysis, Regularized SVD,

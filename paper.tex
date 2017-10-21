@@ -11,8 +11,6 @@
 \usepackage{caption}
 \usepackage{parcolumns}
 
-
-
 % if you need to pass options to natbib, use, e.g.:
 % \PassOptionsToPackage{numbers, compress}{natbib}
 % before loading nips_2017
@@ -276,7 +274,7 @@ provides a number of classes with modular functionality.  As a simple example,
 mlpack's mean shift clustering implementation (as of version 2.2.5) takes three
 template parameters:
 
-\begin{minted}{c++}
+\begin{minted}[fontsize=\footnotesize]{c++}
   template<bool UseKernel, typename KernelType, typename MatType>
   class MeanShift;
 \end{minted}
@@ -284,7 +282,7 @@ template parameters:
 Thus a user wishing to perform kernelized mean shift clustering with the
 Gaussian kernel might simply use the class
 
-\begin{minted}{c++}
+\begin{minted}[fontsize=\footnotesize]{c++}
   MeanShift<true, GaussianKernel, arma::mat>
 \end{minted}
 
@@ -435,6 +433,7 @@ parabola with a distinct minimum. In this example, we will show how we can use
 mlpack’s framework for this task, and obtain the objective of the function shown
 below.
 
+% \vspace*{-0.3em}
 \begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
 class ObjectiveFunction {
@@ -464,38 +463,46 @@ class ObjectiveFunction {
  arma::vec in, bi; arma::uvec order;
 }
 \end{minted}
+\vspace{-0.6em}
 \caption{Simple objective function where each dimension has a parabola with a
   distinct minimum}
+\vspace{-0.8em}
 \end{listing}
+\vspace{-0.8em}
 \begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
 class SimpleOptimizer {
- SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) {}
+ SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) { }
 
  template<typename FunctionType>
  double Optimize(FunctionType& function, arma::mat& parameter) {
   arma::mat gradient;
-  for (size_t i = 0; i < 300; ++i)
-  {
+  for (size_t i = 0; i < 300; ++i) {
    const size_t funIdx = i % 4;
    function.Gradient(parameter, funIdx, gradient, batchSize);
    parameter -= lr * gradient;
-
    function.Shuffel();
   }
-
   return function.Evaluate(parameter, 0, function.NumFunctions());
  }
  size_t bs;  double lr;
 }
 \end{minted}
+\vspace{-0.6em}
 \caption{Simple stochastic gradient descent method with a static number of
 iterations to optimize the function parameter ({\tt bs} defines the batch size
 and {\tt lr} the learning rate). )}
+\vspace{-0.6em}
 \end{listing}
+\vspace{-0.8em}
+Using this code, we can compile the code, and when we run it
 
-Using this code, we can compile the code, and when we run it we receive the
-following output:
+\begin{minted}[fontsize=\footnotesize]{c++}
+ObjectiveFunction function; arma::mat parmeter("0 0 0 0;")
+SimpleOptimizer optimizer;
+std::cout << optimizer.Optimize(function, parameter);
+\end{minted}
+we receive the following output:
 
 xxxx
 

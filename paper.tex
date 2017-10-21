@@ -582,7 +582,7 @@ struct ObjectiveFunction {
   double Evaluate(const arma::mat& para, size_t s, size_t bs) {
     double cost = 0;
     for (size_t i = s; i < s + bs; i++)
-      cost += (para(ord[i]) * para(ord[i]) + bi(ord[i]) * para[i] + in(ord[i]);
+      cost += para(ord[i]) * para(ord[i]) + bi(ord[i]) * para(ord[i]) + in(ord[i]);
     return cost;
   }
 
@@ -623,7 +623,7 @@ struct SimpleOptimizer {
   double Optimize(FunctionType& function, arma::mat& parameter) {
     arma::mat gradient;
     for (size_t i = 0; i < 5000; i += bs) {
-      if ((i % function.NumFunctions() == 0) { function.Shuffle(); }
+      if (i % function.NumFunctions() == 0) { function.Shuffle(); }
       function.Gradient(parameter, i % function.NumFunctions(), gradient, bs);
       parameter -= lr * gradient;
     }
@@ -659,7 +659,7 @@ SimpleOptimizer} using this code:
 \end{minted}
 \vspace*{-0.4em}
 
-When we run this code, we receive the output: {\tt objective: 123.8 }
+When we run this code, we receive the output: {\tt objective: 123.75 }
 
 The final value of the objective function should be close to the optimal value,
 which is the sum of values at the vertices of the parabolas.

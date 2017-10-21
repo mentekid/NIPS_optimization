@@ -8,6 +8,8 @@
 \usepackage{tabularx}
 \usepackage{threeparttable}
 \usepackage{minted}
+\usepackage{caption}
+\usepackage{parcolumns}
 
 % if you need to pass options to natbib, use, e.g.:
 % \PassOptionsToPackage{numbers, compress}{natbib}
@@ -425,66 +427,94 @@ is below.  We can elaborate on this significantly.>}
 A user may implement as many (or as few) of these functions as they would like,
 and this will allow them to use a larger set of optimizers.
 
-{\bf <TODO: add very simple example function>}
-
-
 This section details the usage of mlpack's optimization framework. In this
 example, we would like to minimize a simple sparse function, where each
 dimension has a parabola with a distinct minimum. In this example, we will show
 how we can use mlpack’s framework for this task, and obtain the objective of the
 sparse function shown below.
 
-\begin{minted}{c++}
-class SparseFunction
-{
-  SparseFunction()
-  {
-    intercepts = arma::vec("20 12 15 100");
-    bi = arma::vec("-4 -2 -3 -8");
-  }
+\begin{figure}[H]
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\begin{minted}[fontsize=\footnotesize]{c++}
+class ObjectiveFunction {
+ ObjectiveFunction() {
+  in = arma::vec(
+    "20 12 15 100");
+  bi = arma::vec("-4 -2 -3 -8");
+ }
 
-  double Evaluate(const arma::mat& p, const size_t i)
-  {
-    return p[i] * p[i] + bi[i] * p[i] + intercepts[i];
-  }
+ void Shuffel() {
+  order = arma::shuffle(
+   arma::linspace<arma::uvec>(0, 3, 4));
+ }
 
-  void Gradient(const arma::mat& p, const size_t i, arma::sp_mat& g)
-  {
-    g.zeros(arma::size(p));
-    g[i] = 2 * p[i] + bi[i];
+ size_t NumFunctions() { return 4; }
+
+ double Evaluate(const arma::mat& p,
+  size_t s, size_t b) {
+  double cost = 0;
+  for (size_t i = s; i < s + b; i++) {
+   cost += std::pow(p(i), 2) +
+    bi(order(i)) * p(order(i)) +
+    in(order(i));
   }
+  return cost;
+ }
+
+ void Gradient(const arma::mat& p,
+  size_t s, size_t b, arma::sp_mat& g) {
+  g.zeros(arma::size(p));
+
+  for (size_t i = s; i < s + b; i++) {
+   g(i) += 2 * p(i) + bi(order(i));
+ }
 }
 \end{minted}
+\vspace{2\baselineskip}
+% \captionof{listing}{Distinct parabola sparse function.}
+\end{minipage}
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\begin{minted}[fontsize=\footnotesize]{c++}
+class ObjectiveFunction {
+ ObjectiveFunction() {
+  in = arma::vec(
+    "20 12 15 100");
+  bi = arma::vec("-4 -2 -3 -8");
+ }
 
-First, we would like to define {\tt Optimize()} which takes the function we like
-to optimize and the function parameters as an Armadillo dense matrix type as
-input.
+ void Shuffel() {
+  order = arma::shuffle(
+   arma::linspace<arma::uvec>(0, 3, 4));
+ }
 
-\begin{minted}{c++}
-template<typename FunctionType, typename ParameterType>
-double Optimize(DecomposableFunctionType& function, ParameterType& parameter);
-\end{minted}
+ size_t NumFunctions() { return 4; }
 
-Now, we can use {\tt Gradient()} to write a simple stochastic gradient descent
-method with a static learning rate to optimize the function parameter.
+ double Evaluate(const arma::mat& p,
+  size_t s, size_t b) {
+  double cost = 0;
+  for (size_t i = s; i < s + b; i++) {
+   cost += std::pow(p(i), 2) +
+    bi(order(i)) * p(order(i)) +
+    in(order(i));
+  }
+  return cost;
+ }
 
-\begin{minted}{c++}
-for (size_t i = 0; i < 300; ++i)
-{
-  const size_t functionIndex = i % 4;
-  function.Gradient(parameter, functionIndex, gradient);
-  parameter -= 0.1 * gradient;
+ void Gradient(const arma::mat& p,
+  size_t s, size_t b, arma::sp_mat& g) {
+  g.zeros(arma::size(p));
+
+  for (size_t i = s; i < s + b; i++) {
+   g(i) += 2 * p(i) + bi(order(i));
+ }
 }
 \end{minted}
-
-Lastly, we would like to calculate the final objective. This can be done by
-iterating over the parameter space using {\tt Evaluate()}.
-
-\begin{minted}{c++}
-double objective = 0;
-for (size_t i = 0; i < 4; ++i)
-  objective += function.Evaluate(parameter, i);
-\end{minted}
+% \captionof{listing}{Optimizer class.}
+\end{minipage}
+\captionof{listing}{not relevant}
+\end{figure}
 
 Using this code, we can compile the code, and when we run it we receive the
 following output:
@@ -495,7 +525,6 @@ This simple example, of course, does not discuss all the intricacies like a more
 complex learning rate update routine, but instead presents how the optimization
 framework could be used in a simple data science context. Adapting the example
 to a real-life application would be more straightforward.
-
 
 Another important component of the optimization framework design is flexibility.
 To this end, we use a C++ programming paradigm known as policy-based design

@@ -571,7 +571,7 @@ below.
 % \vspace*{-0.3em}
 %\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
-class ObjectiveFunction {
+struct ObjectiveFunction {
   ObjectiveFunction() {
     in = arma::vec("20 12 15 100");
     bi = arma::vec("-4 -2 -3 -8");
@@ -583,11 +583,11 @@ class ObjectiveFunction {
   double Evaluate(const arma::mat& para, size_t s, size_t bs) {
     double cost = 0;
     for (size_t i = s; i < s + bs; i++)
-      cost += (para(i) * para(i)) + bi(order(i)) * para(order(i)) + in(order(i));
+      cost += (para(i) * para(i)) + bi(order(i)) * para(i) + in(order(i));
     return cost;
   }
 
-  void Gradient(const arma::mat& para, size_t s, size_t bs, arma::mat& g) {
+  void Gradient(const arma::mat& para, size_t s, arma::mat& g, size_t bs) {
     g.zeros(para.n_rows, para.n_cols);
     for (size_t i = s; i < s + bs; i++)
       g(i) += (1.0 / bs) * 2 * para(i) + bi(order(i));
@@ -604,17 +604,17 @@ class ObjectiveFunction {
 %\vspace{-0.8em}
 %\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
-class SimpleOptimizer {
-  SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) { }
+struct SimpleOptimizer {
+  SimpleOptimizer(size_t bs = 1, double lr = 0.02) : bs(bs), lr(lr) { }
 
   template<typename FunctionType>
   double Optimize(FunctionType& function, arma::mat& parameter) {
     arma::mat gradient;
-    for (size_t i = 0; i < 300; i += bs) {
+    for (size_t i = 0; i < 5000; i += bs) {
       const size_t funIdx = i % 4;
-      function.Gradient(parameter, funIdx, gradient, batchSize);
-      parameter -= lr * gradient;
       if (funIdx == 0) { function.Shuffle(); }
+      function.Gradient(parameter, funIdx, gradient, bs);
+      parameter -= lr * gradient;
     }
     return function.Evaluate(parameter, 0, function.NumFunctions());
   }
@@ -632,20 +632,16 @@ Using this code, we can compile the code, and when we run it
 
 \vspace*{-0.4em}
 \begin{minted}[fontsize=\footnotesize]{c++}
-  ObjectiveFunction function; arma::mat parameter("0 0 0 0;")
+  ObjectiveFunction function; arma::mat parameter("0 0 0 0;");
   SimpleOptimizer optimizer;
-  std::cout << optimizer.Optimize(function, parameter);
+  std::cout << "objective: " << optimizer.Optimize(function, parameter);
 \end{minted}
 \vspace*{-0.4em}
 
-we receive the following output:
+we receive the output: {\tt objective: 123.8 }
 
-\vspace*{-0.4em}
-{\footnotesize
-\begin{verbatim}
-xxxx
-\end{verbatim}
-}
+The final value of the objective function should be close to the optimal value,
+which is the sum of values at the vertices of the parabolas.
 \vspace*{-0.4em}
 
 This simple example, of course, does not discuss all the intricacies like a more
@@ -674,9 +670,9 @@ debug a problem when they implement an objective function or gradient.  To
 provide good error message output, we can use C++'s template metaprogramming
 support to determine what methods a type has available.  Similarly, we can also
 use static compile-time constants to denote the methods that are required by a
-specific optimizer.  This is implemented via SFINAE \cite{sfinae}.  A {\tt
-static\_assert()} is raised when a given objective function does not have the
-required methods for a given optimizer.
+specific optimizer.  This is implemented via SFINAE
+\cite{Vandevoorde2002sfinae}.  A {\tt static\_assert()} is raised when a given
+objective function does not have the required methods for a given optimizer.
 
 For instance, when attempting to use the L-BFGS optimizer without having a
 {\tt Gradient()} function implemented, the user will receive a (comparatively)

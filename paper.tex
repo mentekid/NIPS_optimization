@@ -548,8 +548,7 @@ optimizer must implement only the method
 \vspace*{-0.5em}
 \begin{minted}[fontsize=\footnotesize]{c++}
 template<typename FunctionType>
-double Optimize(FunctionType& function,
-                arma::mat& parameters);
+double Optimize(FunctionType& function, arma::mat& parameters);
 \end{minted}
 \vspace*{-0.5em}
 
@@ -558,45 +557,58 @@ satisfies the assumptions the optimizer makes (see Section \ref{sec:static}) and
 optimize the given function {\tt function}, storing the best set of parameters
 in the matrix {\tt parameters} and returning the best objective value.
 
-\vspace*{-0.3em}
+\vspace*{-0.5em}
 \section{Example function and optimizer}
-\vspace*{-0.4em}
+\vspace*{-0.6em}
 
 This section details the usage of mlpack's optimization framework. In this
 example, we would like to minimize a simple function, where each dimension has a
-parabola with a distinct minimum. In this example, we will show how we can use
-mlpack’s framework for this task, and obtain the objective of the function shown
-below.
+parabola with a distinct minimum. In this example, we show how to use mlpack’s
+framework for this task, and minimize the function below.
 
 % \vspace*{-0.3em}
 %\begin{listing}[H]
+\vspace*{-0.3em}
 \begin{minted}[fontsize=\footnotesize]{c++}
 struct ObjectiveFunction {
-  ObjectiveFunction() {
+  ObjectiveFunction() { // A separable function consisting of four quadratics.
     in = arma::vec("20 12 15 100");
     bi = arma::vec("-4 -2 -3 -8");
   }
 
   size_t NumFunctions() { return 4; }
-  void Shuffle() { order = arma::shuffle(arma::uvec("0 1 2 3 ")); }
+  void Shuffle() { ord = arma::shuffle(arma::uvec("0 1 2 3")); }
 
   double Evaluate(const arma::mat& para, size_t s, size_t bs) {
     double cost = 0;
     for (size_t i = s; i < s + bs; i++)
-      cost += (para(i) * para(i)) + bi(order(i)) * para(i) + in(order(i));
+      cost += (para(ord[i]) * para(ord[i]) + bi(ord[i]) * para[i] + in(ord[i]);
     return cost;
   }
 
   void Gradient(const arma::mat& para, size_t s, arma::mat& g, size_t bs) {
     g.zeros(para.n_rows, para.n_cols);
     for (size_t i = s; i < s + bs; i++)
-      g(i) += (1.0 / bs) * 2 * para(i) + bi(order(i));
+      g(ord[i]) += (1.0 / bs) * 2 * para(ord[i]) + bi(ord[i]);
   }
 
-  arma::vec in, bi; arma::uvec order;
+  arma::vec in /* intercepts */, bi /* coeffs */; arma::uvec ord /* function order */;
 };
 \end{minted}
-%\vspace{-0.6em}
+\vspace*{-0.3em}
+
+Note that in this code, we maintain an ordering with the vector {\tt order}; in
+other situations, such as training neural networks, we could simply shuffle the columns of the data
+matrix in {\tt Shuffle()}.  This objective function will work with any mlpack
+optimizer that supports separable or differentiable functions; this includes
+all SGD-like optimizers, L-BFGS, simulated annealing, and others.
+
+Next, we wish to define a simple example optimizer that can be used with {\tt
+ObjectiveFunction} and other mlpack objective functions.  For this, we must
+implement only an {\tt Optimize()} method, and a constructor to set some
+parameters.  The code is given below.
+
+\vspace{-0.3em}
 %\caption{Simple objective function where each dimension has a parabola with a
 %  distinct minimum}
 %\vspace{-0.8em}
@@ -611,9 +623,8 @@ struct SimpleOptimizer {
   double Optimize(FunctionType& function, arma::mat& parameter) {
     arma::mat gradient;
     for (size_t i = 0; i < 5000; i += bs) {
-      const size_t funIdx = i % 4;
-      if (funIdx == 0) { function.Shuffle(); }
-      function.Gradient(parameter, funIdx, gradient, bs);
+      if ((i % function.NumFunctions() == 0) { function.Shuffle(); }
+      function.Gradient(parameter, i % function.NumFunctions(), gradient, bs);
       parameter -= lr * gradient;
     }
     return function.Evaluate(parameter, 0, function.NumFunctions());
@@ -621,14 +632,24 @@ struct SimpleOptimizer {
   size_t bs; double lr; // Store batch size and learning rate internally.
 };
 \end{minted}
-%\vspace{-0.6em}
+\vspace{-0.3em}
 %\caption{Simple stochastic gradient descent method with a static number of
 %iterations to optimize the function parameter ({\tt bs} defines the batch size
 %and {\tt lr} the learning rate). )}
 %\vspace{-0.6em}
 %\end{listing}
 %\vspace{-0.8em}
-Using this code, we can compile the code, and when we run it
+
+Note that for the sake of brevity we have omitted checks on the batch size
+(this optimizer assumes that {\tt function.NumFunctions()} is a multiple of the
+batch size) and other typical parts of real implementations, as well as any
+static type checking to ensure separability and differentiability.  Still, {\tt
+SimpleOptimizer} can work with any mlpack objective function satisfying those
+conditions.  This includes mlpack's neural network code, logistic regression,
+and other objective functions.
+
+Now, we can find a minimum of {\tt ObjectiveFunction} with {\tt
+SimpleOptimizer} using this code:
 
 \vspace*{-0.4em}
 \begin{minted}[fontsize=\footnotesize]{c++}
@@ -638,31 +659,38 @@ Using this code, we can compile the code, and when we run it
 \end{minted}
 \vspace*{-0.4em}
 
-we receive the output: {\tt objective: 123.8 }
+When we run this code, we receive the output: {\tt objective: 123.8 }
 
 The final value of the objective function should be close to the optimal value,
 which is the sum of values at the vertices of the parabolas.
-\vspace*{-0.4em}
-
 This simple example, of course, does not discuss all the intricacies like a more
 complex learning rate update routine, but instead presents how the optimization
 framework could be used in a simple data science context. Adapting the example
-to a real-life application would be more straightforward.
+to a real-life application would be straightforward.
 
-Another important component of the optimization framework design is flexibility.
-To this end, we use a C++ programming paradigm known as policy-based design
-\cite{Alexandrescu2001}. In short, this means that the behavior is easily
-controllable by the user, simply by specifying template parameters. For example,
-the SGD class, which is used as basis for other stochastic gradient descent
-methods, accepts a template parameter UpdateType. Thus, if the user wants to
-update the learning rate update strategy that mlpack does not have support for,
-they merely need to implement a optimizer class, and then they can use the type
-SGD<MyCustomLearningRate>. Additionally, because templates are being used, there
-is no additional overhead, as there would be when providing this type of support
-through inheritance or in other languages such as Python or C.
+An important point to re-emphasize is that the use of templates and
+policy-based design allows easy control of behavior by users, simply by
+specifying template parameters---or writing custom classes when needed.  In
+addition, there is no runtime performance penalty for this flexibility, as
+there would be when providing this type of support through inheritance or in
+other languages such as Python or C.
 
+%Another important component of the optimization framework design is flexibility.
+%To this end, we use a C++ programming paradigm known as policy-based design
+%\cite{Alexandrescu2001}. In short, this means that the behavior is easily
+%controllable by the user, simply by specifying template parameters. For example,
+%the SGD class, which is used as basis for other stochastic gradient descent
+%methods, accepts a template parameter UpdateType. Thus, if the user wants to
+%update the learning rate update strategy that mlpack does not have support for,
+%they merely need to implement a optimizer class, and then they can use the type
+%SGD<MyCustomLearningRate>. Additionally, because templates are being used, there
+%is no additional overhead, as there would be when providing this type of support
+%through inheritance or in other languages such as Python or C.
+
+\vspace*{-0.4em}
 \section{Statically checking function properties}
 \label{sec:static}
+\vspace*{-0.3em}
 
 Unfortunately, template metaprogramming can result in some very lengthy error
 messages.  Therefore, we must be careful to ensure that a user is able to easily
@@ -685,9 +713,10 @@ simple error message of the form:
       definition of a Gradient() function
 \end{verbatim}
 }
-\vspace*{-0.4em}
+\vspace*{-0.9em}
 
 \section{Supported optimizers and functions in mlpack}
+\vspace*{-0.3em}
 
 Thanks to the easy abstraction, we have been able to provide support for a large
 set of diverse optimizers and objective functions.  Below is a list of what is
@@ -721,14 +750,15 @@ currently available.
 In addition, many methods are currently in development and will be released in
 the future.
 
+\vspace*{-0.4em}
 \section{Conclusion}
+\vspace*{-0.3em}
 
 We have identified that the support for generic and robust optimization is not
 currently available in most machine learning toolkits, and acted upon this
 observation to provide an easy framework for both implementing new optimizers
 and new objective functions to be optimized inside of the mlpack machine
 learning library.
-
 The framework provided by mlpack supports a wide array of special cases, and
 already has implemented specialized algorithms that outperform their classic
 generic alternatives.

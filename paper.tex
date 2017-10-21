@@ -142,7 +142,7 @@ scikit-learn \cite{pedregosa2011scikit},
 do have optimizers, but generally not in a coherent framework and
 often the implementations may be specific to an individual machine learning
 algorithm.  At a higher level, many programming languages may have generic
-optimizers, like SciPy \cite{jones2014scipy} and MATLAB, but typically these
+optimizers, like SciPy \cite{jones2014scipy} and MATLAB \cite{mathworks2017OTB}, but typically these
 optimizers are not suitable for large-scale machine learning tasks where, e.g.,
 calculating the full gradient of all of the data may not be feasible.  Table
 \ref{tab:features} provides a rough overview.
@@ -214,40 +214,40 @@ framework, and some example usage of mlpack's optimizers.
   \hline
         % It might be reasonable to say mlpack categorical support is only
         % partial, but I am not sure exactly where we draw the line.
-        & mlpack             & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE \\
+        & mlpack \cite{mlpack2013}            & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE \\
         % The Shogun toolbox has a fairly nice framework, but it doesn't support
         % sparse gradients or categorical features.  It also does not appear to
         % support constraints.
-        & shogun             & \CIRCLE & - & \CIRCLE & \CIRCLE & \CIRCLE & - & -
+        & shogun \cite{sonnenburg2010shogun}             & \CIRCLE & - & \CIRCLE & \CIRCLE & \CIRCLE & - & -
 \\
         % VW doesn't appear to have any framework whatsoever and the code is
         % awful, but it does support batches and categorical features.
-        & vowpal wabbit      & - & - & \CIRCLE  & - & - & - &
+        & vowpal wabbit \cite{Langford2007VW}      & - & - & \CIRCLE  & - & - & - &
 \CIRCLE \\
         % TensorFlow has a few optimizers, but they are all SGD-related.  You
         % can write most objectives easily (but some very hard), and categorical
         % support might be possible but would not be easy.
-        & TensorFlow         & \CIRCLE & -  & \CIRCLE  & \LEFTcircle & - &
+        & TensorFlow \cite{abadi2016tensorflow}        & \CIRCLE & -  & \CIRCLE  & \LEFTcircle & - &
 \LEFTcircle & -  \\
         % Caffe has a nice framework, but it's only for SGD-related optimizers.
         % I think I could write a new one, but it is not the easiest thing in
         % the world.
-        & caffe             & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
+        & caffe \cite{jia2014caffe}           & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
 & - & - \\
         % Keras is restricted to neural networks and SGD-like optimizers.  I
         % don't know that it is possible to easily write a new optimizer.
-        & keras             & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
+        & keras \cite{chollet2015}            & \CIRCLE & -  & \CIRCLE & \LEFTcircle & \LEFTcircle
 & - & - \\
         % sklearn has a few optimizer frameworks, but they are all in different
         % places and have somewhat different support.
-        & scikit-learn       & \LEFTcircle & - & \LEFTcircle  & \LEFTcircle & -
+        & scikit-learn \cite{pedregosa2011scikit}       & \LEFTcircle & - & \LEFTcircle  & \LEFTcircle & -
 & - & - \\
         % scipy has some nice optimizer framework but it does not support
         % batches or some of the more complex functionality.  And you can't
         % write your own.
-        & scipy              & \CIRCLE & \CIRCLE  & -  & \CIRCLE & - & - & - \\
+        & scipy \cite{jones2014scipy}             & \CIRCLE & \CIRCLE  & -  & \CIRCLE & - & - & - \\
         % MATLAB is very similar to scipy.
-        & MATLAB             & \CIRCLE & \CIRCLE & - & \CIRCLE & - & - & - \\
+        & MATLAB \cite{mathworks2017OTB}            & \CIRCLE & \CIRCLE & - & \CIRCLE & - & - & - \\
         \cmidrule[1pt]{2-9}
     \end{tabular}
 %   \begin{tablenotes}\footnotesize

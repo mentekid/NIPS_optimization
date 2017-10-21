@@ -7,9 +7,11 @@
 \usepackage{wasysym}
 \usepackage{tabularx}
 \usepackage{threeparttable}
-\usepackage{minted}
+\usepackage[newfloat]{minted}
 \usepackage{caption}
 \usepackage{parcolumns}
+
+
 
 % if you need to pass options to natbib, use, e.g.:
 % \PassOptionsToPackage{numbers, compress}{natbib}
@@ -428,93 +430,69 @@ A user may implement as many (or as few) of these functions as they would like,
 and this will allow them to use a larger set of optimizers.
 
 This section details the usage of mlpack's optimization framework. In this
-example, we would like to minimize a simple sparse function, where each
-dimension has a parabola with a distinct minimum. In this example, we will show
-how we can use mlpack’s framework for this task, and obtain the objective of the
-sparse function shown below.
+example, we would like to minimize a simple function, where each dimension has a
+parabola with a distinct minimum. In this example, we will show how we can use
+mlpack’s framework for this task, and obtain the objective of the function shown
+below.
 
-\begin{figure}[H]
-\begin{minipage}[t]{0.49\textwidth}
-\centering
+\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
 class ObjectiveFunction {
  ObjectiveFunction() {
-  in = arma::vec(
-    "20 12 15 100");
+  in = arma::vec("20 12 15 100");
   bi = arma::vec("-4 -2 -3 -8");
  }
 
- void Shuffel() {
-  order = arma::shuffle(
-   arma::linspace<arma::uvec>(0, 3, 4));
- }
+ void Shuffel() { order = arma::shuffle(arma::linspace<arma::uvec>(0, 3, 4)); }
 
  size_t NumFunctions() { return 4; }
 
- double Evaluate(const arma::mat& p,
-  size_t s, size_t b) {
+ double Evaluate(const arma::mat& para, size_t s, size_t bs) {
   double cost = 0;
-  for (size_t i = s; i < s + b; i++) {
-   cost += std::pow(p(i), 2) +
-    bi(order(i)) * p(order(i)) +
-    in(order(i));
-  }
+  for (size_t i = s; i < s + bs; i++)
+   cost += std::pow(para(i), 2) + bi(order(i)) * para(order(i)) + in(order(i));
   return cost;
  }
 
- void Gradient(const arma::mat& p,
-  size_t s, size_t b, arma::sp_mat& g) {
+ void Gradient(const arma::mat& para, size_t s, size_t bs, arma::mat& g) {
   g.zeros(arma::size(p));
-
-  for (size_t i = s; i < s + b; i++) {
-   g(i) += 2 * p(i) + bi(order(i));
+  for (size_t i = s; i < s + bs; i++)
+   g(i) += 2 * para(i) + bi(order(i));
+  g /= bs;
  }
+
+ arma::vec in, bi; arma::uvec order;
 }
 \end{minted}
-\vspace{2\baselineskip}
-% \captionof{listing}{Distinct parabola sparse function.}
-\end{minipage}
-\begin{minipage}[t]{0.49\textwidth}
-\centering
+\caption{Simple objective function where each dimension has a parabola with a
+  distinct minimum}
+\end{listing}
+\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
-class ObjectiveFunction {
- ObjectiveFunction() {
-  in = arma::vec(
-    "20 12 15 100");
-  bi = arma::vec("-4 -2 -3 -8");
- }
+class SimpleOptimizer {
+ SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) {}
 
- void Shuffel() {
-  order = arma::shuffle(
-   arma::linspace<arma::uvec>(0, 3, 4));
- }
+ template<typename FunctionType>
+ double Optimize(FunctionType& function, arma::mat& parameter) {
+  arma::mat gradient;
+  for (size_t i = 0; i < 300; ++i)
+  {
+   const size_t funIdx = i % 4;
+   function.Gradient(parameter, funIdx, gradient, batchSize);
+   parameter -= lr * gradient;
 
- size_t NumFunctions() { return 4; }
-
- double Evaluate(const arma::mat& p,
-  size_t s, size_t b) {
-  double cost = 0;
-  for (size_t i = s; i < s + b; i++) {
-   cost += std::pow(p(i), 2) +
-    bi(order(i)) * p(order(i)) +
-    in(order(i));
+   function.Shuffel();
   }
-  return cost;
- }
 
- void Gradient(const arma::mat& p,
-  size_t s, size_t b, arma::sp_mat& g) {
-  g.zeros(arma::size(p));
-
-  for (size_t i = s; i < s + b; i++) {
-   g(i) += 2 * p(i) + bi(order(i));
+  return function.Evaluate(parameter, 0, function.NumFunctions());
  }
+ size_t bs;  double lr;
 }
 \end{minted}
-% \captionof{listing}{Optimizer class.}
-\end{minipage}
-\captionof{listing}{not relevant}
-\end{figure}
+\caption{Simple stochastic gradient descent method with a static number of
+iterations to optimize the function parameter ({\tt bs} defines the batch size
+and {\tt lr} the learning rate). )}
+\end{listing}
 
 Using this code, we can compile the code, and when we run it we receive the
 following output:

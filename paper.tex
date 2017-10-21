@@ -21,7 +21,7 @@
 \usepackage[]{nips_2017}
 
 % to compile a camera-ready version, add the [final] option, e.g.:
-% \usepackage[final]{nips_2017}
+%\usepackage[final]{nips_2017}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -42,7 +42,7 @@
   l%
   <{\egroup}%
 }
-\newcommand*\rot{\multicolumn{1}{R{60}{2em}}}
+\newcommand*\rot{\multicolumn{1}{R{30}{2em}}}
 
 % Could this be a better title?
 \title{A generic and fast C++ optimization framework}
@@ -69,6 +69,7 @@
   \AND
   Ryan R. Curtin \\
   Symantec Corporation \\
+  Atlanta, GA, USA 30318 \\
   \texttt{ryan@ratml.org} \\
 }
 
@@ -82,18 +83,27 @@ The development of the {\bf mlpack} C++ machine learning library
 (\url{http://www.mlpack.org/}) has required the design and implementation of a
 flexible, robust optimization system that is able to solve the types of
 arbitrary optimization problems that may arise all throughout machine learning
-problems.  You care because:
-
-\begin{itemize}
-  \item It's easy to implement new optimizers.
-  \item It's easy to implement new functions to be optimized.
-  \item This system is more comprehensive than other techniques that may focus
-only on neural networks or single problems.
-  \item This system is also more specific and offers more room for optimization
-than super general systems like scipy.optimize().
-\end{itemize}
-
-This abstract will need to be rewritten.
+problems.  In this paper we present the generic optimization framework that we
+have designed for mlpack.  A key priority in the design was ease of
+implementation of both new optimizers and new objective functions to be
+optimized; therefore, implementation of a new optimizer requires only one
+method and implementation of a new objective function requires at most four
+functions.  This leads to simple and intuitive code, and for fast prototyping
+and experimentation, this is of paramount importance.  When compared to
+optimization frameworks of other libraries, we find that mlpack's supports more
+types of objective functions, is able to make optimizations that other
+frameworks do not, and seamlessly supports user-defined objective functions
+{\it and} optimizers.
+%\begin{itemize}
+%  \item It's easy to implement new optimizers.
+%  \item It's easy to implement new functions to be optimized.
+%  \item This system is more comprehensive than other techniques that may focus
+%only on neural networks or single problems.
+%  \item This system is also more specific and offers more room for optimization
+%than super general systems like scipy.optimize().
+%\end{itemize}
+%
+%This abstract will need to be rewritten.
 \end{abstract}
 
 \section{Introduction}
@@ -129,14 +139,13 @@ some cases not possible.  Other libraries, like
 % Shogun \cite{shogun}
 %and
 scikit-learn \cite{pedregosa2011scikit},
-do have optimizers implementation, but generally not in a coherent framework and
+do have optimizers, but generally not in a coherent framework and
 often the implementations may be specific to an individual machine learning
 algorithm.  At a higher level, many programming languages may have generic
 optimizers, like SciPy \cite{jones2014scipy} and MATLAB, but typically these
 optimizers are not suitable for large-scale machine learning tasks where, e.g.,
 calculating the full gradient of all of the data may not be feasible.  Table
-\ref{tab:features} provides a rough overview of the capabilities of many common
-machine learning libraries and languages.
+\ref{tab:features} provides a rough overview.
 
 Given this situation, we have developed a flexible optimization infrastructure
 in the {\bf mlpack} C++ machine learning library \cite{mlpack2013}.  This
@@ -144,10 +153,9 @@ infrastructure makes it easy to combine nearly any type of optimizer with nearly
 any type of objective function, and has allowed us to minimize the effort
 necessary to both implement new optimizers and to implement new machine learning
 algorithms that depend on optimization.  Since the framework is implemented in
-C++ and uses template metaprogramming, we are able to preserve a clean syntax
+C++ and uses template metaprogramming, we are able to preserve clean syntax
 while simultaneously allowing compile-time optimizations that can result in a
-generic optimizer that is equivalently fast to an optimizer written specifically
-for one objective function.
+generic optimizer that is as fast as an optimizer written for one specific objective function.
 
 In this short paper, we describe mlpack's optimization infrastructure in detail.
 First, we describe the types of optimization problems we would like to solve,
@@ -255,10 +263,12 @@ natively take advantage of sparse gradients; and {\it categorical} refers to
 whether support for categorical features exists.
 }
 \label{tab:features}
-\vspace*{-1.5em}
+\vspace*{-1.8em}
 \end{table}
 
+\vspace*{-0.3em}
 \section{The mlpack machine learning library}
+\vspace*{-0.2em}
 
 mlpack is a C++ machine learning library with an emphasis on speed, flexibility,
 and ease of use \cite{mlpack2013}; it has been continuously developed since
@@ -274,32 +284,30 @@ provides a number of classes with modular functionality.  As a simple example,
 mlpack's mean shift clustering implementation (as of version 2.2.5) takes three
 template parameters:
 
+\vspace*{-0.4em}
 \begin{minted}[fontsize=\footnotesize]{c++}
   template<bool UseKernel, typename KernelType, typename MatType>
   class MeanShift;
 \end{minted}
+\vspace*{-0.4em}
 
 Thus a user wishing to perform kernelized mean shift clustering with the
 Gaussian kernel might simply use the class
-
-\begin{minted}[fontsize=\footnotesize]{c++}
-  MeanShift<true, GaussianKernel, arma::mat>
-\end{minted}
-
+{\footnotesize \mintinline{c++}{MeanShift<true, GaussianKernel, arma::mat>}}
 \noindent where {\tt arma::mat} is Armadillo's dense matrix type and {\tt
-GaussianKernel} is a class that provides one simple {\tt Evaluate()} function
-that returns the kernel value between its two arguments.  Since the {\tt
-KernelType} argument is a template argument, any class can be used---it does not
-need to be functionality supplied with mlpack.  Therefore, a user can simply
+GaussianKernel} is a class that provides one simple {\tt Evaluate()} method.
+
+Since the {\tt KernelType} argument is a template argument, any class can be
+used---it does not need to be part of mlpack.  Therefore, a user can simply
 implement their own {\tt KernelType} class with the single {\tt Evaluate()}
-function and use that as a template argument to the {\tt MeanShift} class, and
-the compiler will generate a specialized implementation using the custom kernel.
-Similar support could be accomplished by, e.g., function pointers (and this is
-often done in other languages); however, templates allow us to avoid the runtime
-cost of dereferencing the function pointer by generating code that directly
-calls the correct function. This cost can be non-negligible, especially in
-situations where the function is called many times, such as the {\tt Evaluate()}
-function of an optimization problem.
+method and use that as a template argument to the {\tt MeanShift} class, and
+the compiler will generate a specialized implementation using the custom
+kernel.  Similar support could be accomplished by, e.g., function pointers (and
+this is often done in other languages); however, templates allow us to avoid
+the runtime cost of dereferencing the function pointer by generating code that
+directly calls the correct method. This cost can be non-negligible, especially
+in situations where the method is called many times, such as the {\tt
+Evaluate()} method of an optimization problem.
 
 mlpack uses policy-based design throughout the library, so that any
 functionality can be easily extended or modified by the user without needing to
@@ -307,37 +315,44 @@ dig into the internals of the code.  Our optimization framework is built around
 this paradigm, allowing for fast prototyping of either new optimizers or new
 objective functions.
 
+\vspace*{-0.3em}
 \section{Requirements for optimizers and functions}
+\vspace*{-0.2em}
 
 In general, we want to be able to consider any solver of the problem
 
+\vspace*{-0.5em}
 \begin{equation}
 \operatorname{argmin}_{x} f(x)
 \end{equation}
+\vspace*{-1.3em}
 
-\noindent for any function $f(x)$ that takes some vector input $x$.  However, it
+\noindent for any function $f(x)$ that takes some vector input $x$.  But it
 is impossible to implement something both so generic and fast---for instance,
 gradient-based approaches converge far more quickly than gradient-free
 approaches (in general), so we must design an abstraction that is able to
-simultaneously generalize to many problem types, as well as able to take
-advantage of accelerations and optimizations.
+simultaneously generalize to many problem types, as well as take advantage of
+accelerations and optimizations.
 
-Let us split the class of functions to be optimized into some subclasses:
+Let us describe the class of functions to be optimized with some non-exclusive
+properties:
 
-\begin{itemize}
+\vspace*{-0.4em}
+\begin{itemize} \itemsep -1pt
   \item {\bf arbitrary}: no assumptions can be made on $f(x)$
   \item {\bf differentiable}: $f(x)$ has a computable gradient $f'(x)$
   \item {\bf separable}: $f(x)$ is a sum of individual components: $f(x) =
 \sum_{i} f_i(x)$
   \item {\bf categorical}: $x$ contains elements that can only take discrete
 values
-  \item {\bf numeric}: all elements of $x$ take values in $\mathcal{R}$
+  %\item {\bf numeric}: all elements of $x$ take values in $\mathcal{R}$
   \item {\bf sparse}: the gradient $f'(x)$ or $f_i(x)$ (for a separable
 function) is sparse
   \item {\bf partially differentiable}: the gradient $f'_j(x)$ is computable for
 individual elements $x_j$ of $x$
   \item {\bf bounded}: $x$ is limited in the values that it can take
 \end{itemize}
+\vspace*{-0.4em}
 
 Needless to say, it is impossible to create a system where every optimizer can
 work with every possible type of function: a gradient-based optimizer cannot
@@ -359,73 +374,193 @@ if they were writing an optimizer specifically for the function $f(x)$ at
 hand---this can provide significant efficiency gains.
 
 In some cases, some subclasses of functions can still be optimized with more
-general optimizers.  For instance, separable objective functions can still be
-optimized with an optimizer that does not specifically support separable
-functions.  Similarly, a sparse differentiable function may be optimized with
-any optimizer that can handle differentiable functions; however, that optimizer
-may not take advantage of the sparseness.
+general optimizers.  For example, separable functions can still be optimized
+with an optimizer that does not specifically support them.  Similarly, a sparse
+differentiable function may be optimized with any optimizer that supports
+differentiable functions; however, the sparseness might not be taken advantage
+of.
 
 Now, with an understanding of the types of functions that we wish to support and
 their individual characteristics, we can develop an API that a given function
-should implement the relevant parts of.
+can implement the relevant parts of.
 
+\vspace*{-0.3em}
 \section{{\tt FunctionType} API}
+\vspace*{-0.2em}
 
 In order to facilitate consistent implementations, we have defined a {\tt
-FunctionType} API that describes all the functions that an objective function
-may (or must) implement, depending on the subclass of objective function.
+FunctionType} API that describes all the methods that an objective function
+may implement.  mlpack offers a few variations of this API, each designed to
+cover some of the function characteristics of the previous section.
+%At the time of writing, we offer a few implementations of this API, each
+%designed to cover a special case.
+%\begin{itemize}
+%  \item{\tt FunctionType}: Requires the implementation of {\tt Evaluate()} and
+%  {\tt Gradient()}. This is a generic function that is used by the
+%  {\tt GradientDescent} optimizer.
+%  \item{\tt DecomposableFunctionType}: In addition to {\tt FunctionType}'s
+%  requirements, requires the implementation of {NumFunctions()}, which returns
+%  the number of parts the optimization problem can be decomposed into. The other
+%  two functions ({\tt Gradient(), Evaluate()}) accept an index as argument and
+%  only evaluate one of the decomposable parts. This is used by our {\tt AdaGrad}
+%  implementations, some {\tt SGD} implementations, {\tt RMSProp} and
+%  {\tt SMORMS3}.
+%  \item{\tt SparseFunctionType}: Similar to {\tt DecomposableFunctionType},
+%  however this function type returns a sparse gradient, which makes it ideal for
+%  sparse, parallelizable optimization problems. This function type is used by
+%  {\bf mlpack}'s parallel implementation of SGD, {\tt ParallelSGD}.
+% We'll kind of sweep constrained optimization under the rug a little bit, there
+% are a lot of extra complexities we don't have space for.
+%  \item{\tt LagrangianFunctionType}: This function type fits constrained
+%  optimization problems. It requires the implementation of {\tt NumConstraints},
+%  {\tt EvaluateConstraint()} and {\tt GradientConstraint}, which are required by
+%  optimizers like {\tt AugLagrangian} and {\tt LRSDP}.
+%\end{itemize}
+Any {\tt FunctionType} to be optimized requires the implementation of an {\tt
+Evaluate()} method.  The interface used for that can be one of the following
+two methods:
 
-At the time of writing, we offer a few implementations of this API, each
-designed to cover a special case.
+\vspace*{-0.3em}
+\begin{minted}[fontsize=\footnotesize]{c++}
+// For non-separable objectives.
+double Evaluate(const arma::mat& parameters);
+// For separable objectives.
+double Evaluate(const arma::mat& parameters,
+                const size_t start,
+                const size_t batchSize);
+\end{minted}
+\vspace*{-0.3em}
 
-\begin{itemize}
-  \item{\tt FunctionType}: Requires the implementation of {\tt Evaluate()} and
-  {\tt Gradient()}. This is a generic function that is used by the
-  {\tt GradientDescent} optimizer.
-  \item{\tt DecomposableFunctionType}: In addition to {\tt FunctionType}'s
-  requirements, requires the implementation of {NumFunctions()}, which returns
-  the number of parts the optimization problem can be decomposed into. The other
-  two functions ({\tt Gradient(), Evaluate()}) accept an index as argument and
-  only evaluate one of the decomposable parts. This is used by our {\tt AdaGrad}
-  implementations, some {\tt SGD} implementations, {\tt RMSProp} and
-  {\tt SMORMS3}.
-  \item{\tt SparseFunctionType}: Similar to {\tt DecomposableFunctionType},
-  however this function type returns a sparse gradient, which makes it ideal for
-  sparse, parallelizable optimization problems. This function type is used by
-  {\bf mlpack}'s parallel implementation of SGD, {\tt ParallelSGD}.
-  \item{\tt LagrangianFunctionType}: This function type fits constrained
-  optimization problems. It requires the implementation of {\tt NumConstraints},
-  {\tt EvaluateConstraint()} and {\tt GradientConstraint}, which are required by
-  optimizers like {\tt AugLagrangian} and {\tt LRSDP}.
-\end{itemize}
+Both of these methods should calculate the objective given the parameters
+matrix {\tt parameters}; however, the second overload is for {\it separable}
+functions, and should calculate the partial objective starting at the separable
+function indexed by {\tt start} and calculate {\tt batchSize} partial objectives
+and return the sum.  Functions implementing the first overload are used by
+optimizers like the {\tt GradientDescent} optimizer; functions implementing the
+second are used by SGD-like optimizers.
 
-In addition to these function types, certain optimizers require specific
-functionality to achieve their goal. The {\tt FunctionType} API offers users the
-flexibility to define a custom function signature. As an example, {\bf mlpack}'s
-implementation of L-BFGS requires a function that exposes a
-{\tt GetInitialPoint()} function.
+Note that, importantly, it is easy to calculate the objective for a
+non-separable function with the second overload just by setting {\tt start} to
+$0$ and {\tt batchSize} to $1$.  Therefore, it is easy to make an `adapter' that
+can allow separable optimizers to work with non-separable functions (and vice
+versa).
 
+Next, any {\it differentiable} function must implement some {\tt Gradient()}
+method.
 
-{\bf <TODO: we can add a list of each function and what it does.  A basic list
-is below.  We can elaborate on this significantly.>}
+\vspace*{-0.3em}
+\begin{minted}[fontsize=\footnotesize]{c++}
+// For non-separable differentiable sparse and non-sparse functions.
+template<typename GradType>
+void Gradient(const arma::mat& parameters, GradType& gradient);
+// For separable differentiable sparse and non-sparse functions.
+template<typename GradType>
+void Gradient(const arma::mat& parameters,
+              const size_t start,
+              GradType& gradient,
+              const size_t batchSize);
+\end{minted}
+\vspace*{-0.3em}
 
-\begin{itemize}
-  \item {\tt Evaluate()}: Evaluate a function with the given function parameter.
+Both of these methods should calculate the gradient and place the results into
+the matrix object {\tt gradient}.  Note that the method accepts a template
+parameter {\tt GradType}, which may be {\tt arma::mat} (dense Armadillo matrix)
+or {\tt arma::sp\_mat} (sparse Armadillo matrix).  This allows support for both
+sparse-supporting and non-sparse-supporting optimizers.\footnote{One could write
+a non-templated {\tt Gradient()} method for just {\tt arma::mat}, and it would
+work fine for non-sparse optimizers.  But to us it seems just as easy to
+templatize it.}
 
-  \item {\tt Gradient()}: Evaluate the gradient of a function with the given
-      function parameter and return the gradient.
+Next, if the objective function is {\it partially differentiable}, we can
+implement the following method:
 
-  \item {\tt PartialGradient()}: Evaluate the partial (sparse) gradient of a
-      function with the given parameter and return the partial gradient.
+\vspace*{-0.3em}
+\begin{minted}[fontsize=\footnotesize]{c++}
+// For partially differentiable sparse and non-sparse functions.
+template<typename GradType>
+void PartialGradient(const arma::mat& parameters,
+                     const size_t j,
+                     GradType& gradient);
+\end{minted}
+\vspace*{-0.3em}
 
-  \item ...
-  \item constraints?
-  \item discrete variable support?
-  \item batch support
-\end{itemize}
+This should calculate the gradient of the parameters {\tt parameters} with
+respect to the parameter {\tt j} and store the results (either sparse or dense)
+in the {\tt gradient} matrix object.
 
-A user may implement as many (or as few) of these functions as they would like,
-and this will allow them to use a larger set of optimizers.
+In addition, {\it separable} and {\it partially differentiable} functions must
+implement the {\tt NumFunctions()} and {\tt NumFeatures()} functions,
+respectively:
+
+\vspace*{-0.3em}
+\begin{minted}[fontsize=\footnotesize]{c++}
+// For separable functions: return the number of parts the optimization problem
+// can be decomposed into.
+size_t NumFunctions();
+// For partially differentiable functions: return the number of partial derivatives.
+size_t NumFeatures();
+\end{minted}
+\vspace*{-0.3em}
+
+Finally, {\it separable} functions must implement the method
+{\footnotesize \mintinline{c++}{void Shuffle()}}, which shuffles the ordering
+of the functions (note that the optimizer is not required to call it).  This is
+useful for data-based problems, where it may not be desirable to loop over the
+separable objective functions---which usually correspond to individual data
+points---in the same order.
+
+These simple functions, however, do not specify how to handle {\it categorical}
+or {\it bounded} functions.  In those cases, the {\tt FunctionType} should
+accept, in its constructor, its bounds and which dimensions are categorical or
+numeric.  Since constraint types can differ greatly, it is up to an individual
+optimizer to define the format in which it should receive its constraints.  More
+information can be found in the documentation of mlpack's {\tt LRSDP}, {\tt
+AugLagrangian}, and {\tt FrankWolfe} optimizers.
+
+%% The constraints are part of the optimizer themselves.
+% EvaluateConstraint()
+% NumConstraints()
+
+%\begin{itemize}
+%  \item {\tt double Evaluate(const arma::mat& parameters)} {\it (arbitrary
+%functions)}: return the objective function given the parameters.
+%  \item {\tt void Gradient(const arma::mat& parameters, arma::mat& gradient)}
+%{\it (differentiable)}: compute the gradient and store it in {\tt gradient}
+%given the parameters.
+%  \item {\tt double Evaluate(const arma::mat& parameters, const size\_t start,
+%const size\_t batchSize)} {\it (separable)}: compute a partial objective
+%function, starting with separable function {\tt start} and computing {\tt batchSize}
+%functions.
+%  \item {\tt void Gradient(arma::mat& parameters, const size\_t start,
+%arma::mat& gradient, const size\_t batchSize)} {\it (separable)}: compute a part
+%of the gradient starting with separable function {\tt start} and computing {\tt
+%batchSize} individual gradients, storing the result in {\tt gradient}.
+
+\vspace*{-0.3em}
+\section{Optimizer API}
+\vspace*{-0.4em}
+
+In addition to implementing functions, users can also add new optimizers easily
+if they implement an optimizer with a simple API.  Fortunately, the requirements
+for implementing optimizers are much simpler than for objective functions.  An
+optimizer must implement only the method
+
+\vspace*{-0.5em}
+\begin{minted}[fontsize=\footnotesize]{c++}
+template<typename FunctionType>
+double Optimize(FunctionType& function,
+                arma::mat& parameters);
+\end{minted}
+\vspace*{-0.5em}
+
+The {\tt Optimize()} method should check that the given {\tt FunctionType}
+satisfies the assumptions the optimizer makes (see Section \ref{sec:static}) and
+optimize the given function {\tt function}, storing the best set of parameters
+in the matrix {\tt parameters} and returning the best objective value.
+
+\vspace*{-0.3em}
+\section{Example function and optimizer}
+\vspace*{-0.4em}
 
 This section details the usage of mlpack's optimization framework. In this
 example, we would like to minimize a simple function, where each dimension has a
@@ -434,77 +569,84 @@ mlpack’s framework for this task, and obtain the objective of the function sho
 below.
 
 % \vspace*{-0.3em}
-\begin{listing}[H]
+%\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
 class ObjectiveFunction {
- ObjectiveFunction() {
-  in = arma::vec("20 12 15 100");
-  bi = arma::vec("-4 -2 -3 -8");
- }
+  ObjectiveFunction() {
+    in = arma::vec("20 12 15 100");
+    bi = arma::vec("-4 -2 -3 -8");
+  }
 
- void Shuffel() { order = arma::shuffle(arma::linspace<arma::uvec>(0, 3, 4)); }
+  size_t NumFunctions() { return 4; }
+  void Shuffle() { order = arma::shuffle(arma::uvec("0 1 2 3 ")); }
 
- size_t NumFunctions() { return 4; }
+  double Evaluate(const arma::mat& para, size_t s, size_t bs) {
+    double cost = 0;
+    for (size_t i = s; i < s + bs; i++)
+      cost += (para(i) * para(i)) + bi(order(i)) * para(order(i)) + in(order(i));
+    return cost;
+  }
 
- double Evaluate(const arma::mat& para, size_t s, size_t bs) {
-  double cost = 0;
-  for (size_t i = s; i < s + bs; i++)
-   cost += std::pow(para(i), 2) + bi(order(i)) * para(order(i)) + in(order(i));
-  return cost;
- }
+  void Gradient(const arma::mat& para, size_t s, size_t bs, arma::mat& g) {
+    g.zeros(para.n_rows, para.n_cols);
+    for (size_t i = s; i < s + bs; i++)
+      g(i) += (1.0 / bs) * 2 * para(i) + bi(order(i));
+  }
 
- void Gradient(const arma::mat& para, size_t s, size_t bs, arma::mat& g) {
-  g.zeros(arma::size(p));
-  for (size_t i = s; i < s + bs; i++)
-   g(i) += 2 * para(i) + bi(order(i));
-  g /= bs;
- }
-
- arma::vec in, bi; arma::uvec order;
-}
+  arma::vec in, bi; arma::uvec order;
+};
 \end{minted}
-\vspace{-0.6em}
-\caption{Simple objective function where each dimension has a parabola with a
-  distinct minimum}
-\vspace{-0.8em}
-\end{listing}
-\vspace{-0.8em}
-\begin{listing}[H]
+%\vspace{-0.6em}
+%\caption{Simple objective function where each dimension has a parabola with a
+%  distinct minimum}
+%\vspace{-0.8em}
+%\end{listing}
+%\vspace{-0.8em}
+%\begin{listing}[H]
 \begin{minted}[fontsize=\footnotesize]{c++}
 class SimpleOptimizer {
- SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) { }
+  SimpleOptimizer(size_t bs = 2, double lr = 0.1) : bs(bs), lr(lr) { }
 
- template<typename FunctionType>
- double Optimize(FunctionType& function, arma::mat& parameter) {
-  arma::mat gradient;
-  for (size_t i = 0; i < 300; ++i) {
-   const size_t funIdx = i % 4;
-   function.Gradient(parameter, funIdx, gradient, batchSize);
-   parameter -= lr * gradient;
-   function.Shuffel();
+  template<typename FunctionType>
+  double Optimize(FunctionType& function, arma::mat& parameter) {
+    arma::mat gradient;
+    for (size_t i = 0; i < 300; i += bs) {
+      const size_t funIdx = i % 4;
+      function.Gradient(parameter, funIdx, gradient, batchSize);
+      parameter -= lr * gradient;
+      if (funIdx == 0) { function.Shuffle(); }
+    }
+    return function.Evaluate(parameter, 0, function.NumFunctions());
   }
-  return function.Evaluate(parameter, 0, function.NumFunctions());
- }
- size_t bs;  double lr;
-}
+  size_t bs; double lr; // Store batch size and learning rate internally.
+};
 \end{minted}
-\vspace{-0.6em}
-\caption{Simple stochastic gradient descent method with a static number of
-iterations to optimize the function parameter ({\tt bs} defines the batch size
-and {\tt lr} the learning rate). )}
-\vspace{-0.6em}
-\end{listing}
-\vspace{-0.8em}
+%\vspace{-0.6em}
+%\caption{Simple stochastic gradient descent method with a static number of
+%iterations to optimize the function parameter ({\tt bs} defines the batch size
+%and {\tt lr} the learning rate). )}
+%\vspace{-0.6em}
+%\end{listing}
+%\vspace{-0.8em}
 Using this code, we can compile the code, and when we run it
 
+\vspace*{-0.4em}
 \begin{minted}[fontsize=\footnotesize]{c++}
-ObjectiveFunction function; arma::mat parmeter("0 0 0 0;")
-SimpleOptimizer optimizer;
-std::cout << optimizer.Optimize(function, parameter);
+  ObjectiveFunction function; arma::mat parameter("0 0 0 0;")
+  SimpleOptimizer optimizer;
+  std::cout << optimizer.Optimize(function, parameter);
 \end{minted}
+\vspace*{-0.4em}
+
 we receive the following output:
 
+\vspace*{-0.4em}
+{\footnotesize
+\begin{verbatim}
 xxxx
+\end{verbatim}
+}
+\vspace*{-0.4em}
 
 This simple example, of course, does not discuss all the intricacies like a more
 complex learning rate update routine, but instead presents how the optimization
@@ -523,27 +665,31 @@ SGD<MyCustomLearningRate>. Additionally, because templates are being used, there
 is no additional overhead, as there would be when providing this type of support
 through inheritance or in other languages such as Python or C.
 
-\section{Static checking of functions}
-
-{\bf <TODO: probably a better section title>}
+\section{Statically checking function properties}
+\label{sec:static}
 
 Unfortunately, template metaprogramming can result in some very lengthy error
 messages.  Therefore, we must be careful to ensure that a user is able to easily
 debug a problem when they implement an objective function or gradient.  To
 provide good error message output, we can use C++'s template metaprogramming
 support to determine what methods a type has available.  Similarly, we can also
-use static compile-time constants to denote the methods that are require by a
+use static compile-time constants to denote the methods that are required by a
 specific optimizer.  This is implemented via SFINAE \cite{sfinae}.  A {\tt
 static\_assert()} is raised when a given objective function does not have the
-required methods for a given optimizer.  {\bf <TODO: implement this, so we are
-not lying.  But it should be easy enough, maybe an hour of work max.>}
+required methods for a given optimizer.
 
 For instance, when attempting to use the L-BFGS optimizer without having a
-{\tt Gradient()} function implemented, the user will receive the following error
-message:
+{\tt Gradient()} function implemented, the user will receive a (comparatively)
+simple error message of the form:
 
-{\bf <TODO: put error message here.  If we are short on space, let's cut this
-example and make this section shorter.>}
+\vspace*{-0.4em}
+{\footnotesize
+\begin{verbatim}
+  error: static assertion failed: the FunctionType does not have a correct
+      definition of a Gradient() function
+\end{verbatim}
+}
+\vspace*{-0.4em}
 
 \section{Supported optimizers and functions in mlpack}
 
@@ -551,8 +697,9 @@ Thanks to the easy abstraction, we have been able to provide support for a large
 set of diverse optimizers and objective functions.  Below is a list of what is
 currently available.
 
+\vspace*{-0.4em}
 % I guess to save some space we should group them.
-\begin{itemize}
+\begin{itemize} \itemsep -1pt
   \item {\bf SGD variants:} Stochastic Gradient Descent (SGD), Stochastic
       Coordinate Descent (SCD), Parallel Stochastic Gradient Descent (Hogwild!),
       Stochastic Gradient Descent with Restarts (SGDR), SMORMS3, AdaGrad,
@@ -566,13 +713,14 @@ currently available.
 
   \item {\bf Annealing variants:} Simulated Annealing
 
-  \item {\bf Other:} Conditional Gradient Descent (Frank-Wolfe algorithm)
+  \item {\bf Other:} Conditional Gradient Descent, Frank-Wolfe algorithm
 
   \item {\bf Objective functions:} Neural Networks, Logistic regression,
       Matrix completion, Neighborhood Components Analysis, Regularized SVD,
       Reinforcement learning, Softmax regression, Sparse autoencoders,
       Sparse SVM
 \end{itemize}
+\vspace*{-0.4em}
 
 In addition, many methods are currently in development and will be released in
 the future.
@@ -582,12 +730,12 @@ the future.
 We have identified that the support for generic and robust optimization is not
 currently available in most machine learning toolkits, and acted upon this
 observation to provide an easy framework for both implementing new optimizers
-and new objective functions to be optimized inside of the {\bf mlpack} machine
+and new objective functions to be optimized inside of the mlpack machine
 learning library.
 
-The framework provided by {\bf mlpack} supports a wide array of special cases,
-and offers specialized algorithms that outperform their classic generic
- (alternatives.
+The framework provided by mlpack supports a wide array of special cases, and
+already has implemented specialized algorithms that outperform their classic
+generic alternatives.
 
 \bibliographystyle{plain}
 \bibliography{paper}

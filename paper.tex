@@ -700,12 +700,12 @@ other languages such as Python or C.
 Unfortunately, template metaprogramming can result in some very lengthy error
 messages.  Therefore, we must be careful to ensure that a user is able to easily
 debug a problem when they implement an objective function or gradient.  To
-provide good error message output, we can use C++'s template metaprogramming
+ improve error message output, we can use C++'s template metaprogramming
 support to determine what methods a type has available.  Similarly, we can also
 use static compile-time constants to denote the methods that are required by a
 specific optimizer.  This is implemented via SFINAE
 \cite{Vandevoorde2002sfinae}.  A {\tt static\_assert()} is raised when a given
-objective function does not have the required methods for a given optimizer.
+objective function does not implement the methods required by the optimizer used.
 
 For instance, when attempting to use the L-BFGS optimizer without having a
 {\tt Gradient()} function implemented, the user will receive a (comparatively)

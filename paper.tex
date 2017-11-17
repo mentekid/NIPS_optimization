@@ -18,7 +18,7 @@
 % to avoid loading the natbib package, add option nonatbib:
 % \usepackage[nonatbib]{nips_2017}
 
-\usepackage[]{nips_2017}
+\usepackage[final]{nips_2017}
 
 % to compile a camera-ready version, add the [final] option, e.g.:
 %\usepackage[final]{nips_2017}
@@ -58,22 +58,23 @@
 % author name.
 
 \author{
-  Shikhar Bhardwaj \\
-  Delhi Technological University \\
-  Delhi - 110042 \\
-  \texttt{shikhar_bt2k15@dtu.ac.in} \\
-  \AND
-  Yannis Mentekidis \\
-  \AND
-  Marcus Edel \\
-  Free University of Berlin \\
-  Arnimallee 7, 14195 Berlin \\
-  \texttt{marcus.edel@fu-berlin.de} \\
-  \AND
   Ryan R. Curtin \\
   Symantec Corporation \\
   Atlanta, GA, USA 30318 \\
   \texttt{ryan@ratml.org} \\
+  \And
+  Shikhar Bhardwaj \\
+  Delhi Technological University \\
+  Delhi - 110042 \\
+  \texttt{shikhar\char`_bt2k15@dtu.ac.in}
+  \And
+  Marcus Edel \\
+  Free University of Berlin \\
+  Arnimallee 7, 14195 Berlin \\
+  \texttt{marcus.edel@fu-berlin.de} \\
+  \And
+  Yannis Mentekidis \\
+  mentekid@gmail.com
 }
 
 \begin{document}
@@ -81,6 +82,7 @@
 
 \maketitle
 
+\vspace*{-0.5cm}
 \begin{abstract}
 The development of the {\bf mlpack} C++ machine learning library
 (\url{http://www.mlpack.org/}) has required the design and implementation of a
@@ -109,6 +111,7 @@ frameworks do not, and seamlessly supports user-defined objective functions
 %This abstract will need to be rewritten.
 \end{abstract}
 
+\vspace*{-0.5cm}
 \section{Introduction}
 
 Machine learning is a field that is inextricably intertwined with the field of
@@ -483,9 +486,7 @@ implement the following method:
 \begin{minted}[fontsize=\footnotesize]{c++}
 // For partially differentiable sparse and non-sparse functions.
 template<typename GradType>
-void PartialGradient(const arma::mat& parameters,
-                     const size_t j,
-                     GradType& gradient);
+void PartialGradient(const arma::mat& parameters, const size_t j, GradType& gradient);
 \end{minted}
 \vspace*{-0.3em}
 
@@ -541,9 +542,9 @@ AugLagrangian}, and {\tt FrankWolfe} optimizers.
 %of the gradient starting with separable function {\tt start} and computing {\tt
 %batchSize} individual gradients, storing the result in {\tt gradient}.
 
-\vspace*{-0.3em}
-\section{Optimizer API}
 \vspace*{-0.4em}
+\section{Optimizer API}
+\vspace*{-0.5em}
 
 In addition to implementing functions, users can also add new optimizers easily
 if they implement an optimizer with a simple API.  Fortunately, the requirements
@@ -577,8 +578,7 @@ framework for this task, and minimize the function below.
 \begin{minted}[fontsize=\footnotesize]{c++}
 struct ObjectiveFunction {
   ObjectiveFunction() { // A separable function consisting of four quadratics.
-    in = arma::vec("20 12 15 100");
-    bi = arma::vec("-4 -2 -3 -8");
+    in = arma::vec("20 12 15 100"); bi = arma::vec("-4 -2 -3 -8");
   }
 
   size_t NumFunctions() { return 4; }
@@ -711,7 +711,7 @@ For instance, when attempting to use the L-BFGS optimizer without having a
 {\tt Gradient()} function implemented, the user will receive a (comparatively)
 simple error message of the form:
 
-\vspace*{-0.4em}
+\vspace*{-0.5em}
 {\footnotesize
 \begin{verbatim}
   error: static assertion failed: the FunctionType does not have a correct
@@ -741,9 +741,7 @@ currently available.
   \item {\bf Genetic variants:} Conventional Neuro-evolution (CNE), Covariance
         Matrix Adaptation Evolution Strategy (CMA-ES)
 
-  \item {\bf Annealing variants:} Simulated Annealing
-
-  \item {\bf Other:} Conditional Gradient Descent, Frank-Wolfe algorithm
+  \item {\bf Other:} Conditional Gradient Descent, Frank-Wolfe algorithm, Simulated Annealing
 
   \item {\bf Objective functions:} Neural Networks, Logistic regression,
       Matrix completion, Neighborhood Components Analysis, Regularized SVD,
